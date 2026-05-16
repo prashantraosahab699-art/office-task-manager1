@@ -3,38 +3,19 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
 }
 
-enum AppRole {
-  ADMIN
-  MEMBER
-}
-
-enum ProjectRole {
-  ADMIN
-  MEMBER
-}
-
-enum TaskStatus {
-  TODO
-  IN_PROGRESS
-  DONE
-}
-
-enum TaskPriority {
-  LOW
-  MEDIUM
-  HIGH
-}
+// Roles and Statuses are handled as Strings in SQLite
+// We will enforce the values in the application logic/Zod
 
 model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
-  role      AppRole  @default(MEMBER)
+  role      String   @default("MEMBER") // ADMIN | MEMBER
   createdAt DateTime @default(now())
 
   projectMemberships ProjectMember[]
@@ -57,10 +38,10 @@ model Project {
 }
 
 model ProjectMember {
-  id        String      @id @default(uuid())
+  id        String @id @default(uuid())
   projectId String
   userId    String
-  role      ProjectRole @default(MEMBER)
+  role      String @default("MEMBER") // ADMIN | MEMBER
 
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -69,14 +50,14 @@ model ProjectMember {
 }
 
 model Task {
-  id          String       @id @default(uuid())
+  id          String   @id @default(uuid())
   title       String
   description String?
-  status      TaskStatus   @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
+  status      String   @default("TODO") // TODO | IN_PROGRESS | DONE
+  priority    String   @default("MEDIUM") // LOW | MEDIUM | HIGH
   dueDate     DateTime?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   projectId    String
   project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

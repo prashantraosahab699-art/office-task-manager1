@@ -12,7 +12,7 @@ export default function TaskCard({ task, isProjectAdmin, onEdit, onDelete, onSta
 
   return (
     <div
-      className="glass-light rounded-xl p-3.5 group hover:border-primary-500/20 transition-all duration-200 cursor-pointer"
+      className="card rounded-xl p-3.5 group hover:border-primary-500 transition-all duration-200 cursor-pointer bg-white"
       onClick={onEdit}
     >
       <div className="flex items-start justify-between mb-2">

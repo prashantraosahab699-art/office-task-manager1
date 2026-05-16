@@ -1,181 +1,133 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { useProjects, useCreateProject } from '../api/hooks';
-import {
-  FolderKanban, Plus, Users, ListTodo, ArrowRight,
-  Search, X
-} from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
+import { Plus, FolderKanban, Users, Calendar, ArrowRight } from 'lucide-react';
+import Modal from '../components/Modal';
 
 export default function Projects() {
-  const { user } = useAuth();
-  const { data: projects = [], isLoading } = useProjects();
+  const { data: projects, isLoading } = useProjects();
   const createProject = useCreateProject();
+  const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
-  const [search, setSearch] = useState('');
-  const [form, setForm] = useState({ name: '', description: '' });
+  const [formData, setFormData] = useState({ name: '', description: '' });
 
-  const filtered = projects.filter(p =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  async function handleCreate(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name.trim()) return;
-    await createProject.mutateAsync(form);
-    setForm({ name: '', description: '' });
+    if (!formData.name.trim()) return;
+    await createProject.mutateAsync(formData);
+    setFormData({ name: '', description: '' });
     setShowModal(false);
-  }
+  };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="spinner" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="flex items-center justify-center min-h-[60vh]"><div className="spinner" /></div>;
+
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 slide-up">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 fade-in">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-white">Projects</h1>
-          <p className="text-surface-400 mt-1">{projects.length} project{projects.length !== 1 ? 's' : ''} total</p>
+          <h1 className="text-2xl font-bold text-surface-900">Projects</h1>
+          <p className="text-surface-500 mt-1">Manage your team's workspaces and goals.</p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-surface-500" />
-            <input
-              id="project-search"
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-4 py-2 rounded-xl bg-surface-800/50 border border-surface-700 text-white placeholder-surface-500 focus:border-primary-500 transition-all text-sm w-48"
-              placeholder="Search projects..."
-            />
-          </div>
-          {user?.role === 'ADMIN' && (
-            <button
-              id="create-project-btn"
-              onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 text-white font-medium text-sm hover:from-primary-500 hover:to-purple-500 transition-all shadow-lg shadow-primary-500/25 hover:shadow-primary-500/40"
-            >
-              <Plus size={16} /> New Project
-            </button>
-          )}
-        </div>
+        {isAdmin && (
+          <button 
+            onClick={() => setShowModal(true)}
+            className="btn-primary flex items-center gap-2 shadow-sm"
+          >
+            <Plus size={18} /> New Project
+          </button>
+        )}
       </div>
 
-      {/* Project Grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 glass rounded-2xl">
-          <FolderKanban size={48} className="mx-auto mb-4 text-surface-600" />
-          <p className="text-surface-400 text-lg mb-2">
-            {search ? 'No projects match your search' : 'No projects yet'}
-          </p>
-          {user?.role === 'ADMIN' && !search && (
-            <button
-              onClick={() => setShowModal(true)}
-              className="mt-2 text-primary-400 hover:text-primary-300 font-medium text-sm inline-flex items-center gap-1"
-            >
-              Create your first project <ArrowRight size={14} />
-            </button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((project, i) => (
-            <Link
-              key={project.id}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {projects?.length > 0 ? (
+          projects.map((project) => (
+            <Link 
+              key={project.id} 
               to={`/projects/${project.id}`}
-              className="glass rounded-2xl p-6 group hover:border-primary-500/30 hover:shadow-lg hover:shadow-primary-500/10 transition-all duration-300 slide-up"
-              style={{ animationDelay: `${i * 0.05}s` }}
+              className="card p-6 card-hover group transition-all"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500/20 to-purple-500/20 flex items-center justify-center group-hover:from-primary-500/30 group-hover:to-purple-500/30 transition-all">
-                  <FolderKanban size={20} className="text-primary-400" />
+                <div className="w-12 h-12 bg-primary-100 text-primary-600 rounded-xl flex items-center justify-center">
+                  <FolderKanban size={24} />
                 </div>
-                <ArrowRight size={16} className="text-surface-600 group-hover:text-primary-400 group-hover:translate-x-1 transition-all" />
+                <div className="flex -space-x-2">
+                  {project.members?.slice(0, 3).map((m, i) => (
+                    <div key={i} className="w-7 h-7 rounded-full border-2 border-white bg-surface-200 flex items-center justify-center text-[10px] font-bold text-surface-600 overflow-hidden">
+                      {m.user.name.charAt(0)}
+                    </div>
+                  ))}
+                  {project.members?.length > 3 && (
+                    <div className="w-7 h-7 rounded-full border-2 border-white bg-surface-100 flex items-center justify-center text-[10px] font-bold text-surface-400">
+                      +{project.members.length - 3}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-primary-300 transition-colors">
+              
+              <h3 className="text-lg font-bold text-surface-900 mb-2 group-hover:text-primary-600 transition-colors">
                 {project.name}
               </h3>
-              {project.description && (
-                <p className="text-sm text-surface-400 line-clamp-2 mb-4">{project.description}</p>
-              )}
+              <p className="text-sm text-surface-500 line-clamp-2 mb-6 h-10">
+                {project.description || 'No description provided.'}
+              </p>
 
-              <div className="flex items-center gap-4 text-xs text-surface-500 pt-3 border-t border-white/5">
-                <span className="flex items-center gap-1.5">
-                  <Users size={12} /> {project.memberCount} member{project.memberCount !== 1 ? 's' : ''}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <ListTodo size={12} /> {project.openTaskCount} open
-                </span>
-                <span className="text-surface-600">
-                  {project.taskCount} total task{project.taskCount !== 1 ? 's' : ''}
-                </span>
+              <div className="pt-4 border-t border-surface-100 flex items-center justify-between text-xs font-medium text-surface-400">
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1.5"><Users size={14} /> {project.members?.length}</span>
+                  <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(project.createdAt).toLocaleDateString()}</span>
+                </div>
+                <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-primary-600" />
               </div>
             </Link>
-          ))}
-        </div>
-      )}
+          ))
+        ) : (
+          <div className="col-span-full py-20 text-center">
+             <div className="w-20 h-20 bg-surface-100 rounded-full flex items-center justify-center mx-auto mb-6 text-surface-300">
+                <FolderKanban size={40} />
+             </div>
+             <h3 className="text-xl font-bold text-surface-900 mb-2">No projects yet</h3>
+             <p className="text-surface-500 mb-8">Get started by creating your first team workspace.</p>
+             {isAdmin && <button onClick={() => setShowModal(true)} className="btn-primary">Create First Project</button>}
+          </div>
+        )}
+      </div>
 
-      {/* Create Project Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60 backdrop-blur-sm fade-in">
-          <div className="glass rounded-2xl p-6 w-full max-w-md slide-up">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-semibold text-white">New Project</h2>
-              <button onClick={() => setShowModal(false)} className="text-surface-400 hover:text-white">
-                <X size={20} />
+        <Modal onClose={() => setShowModal(false)} title="Create New Project">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-surface-700 mb-2">Project Name</label>
+              <input 
+                type="text" 
+                required
+                autoFocus
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="e.g. Website Redesign"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-surface-700 mb-2">Description</label>
+              <textarea 
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="What is this project about?"
+                className="h-24 resize-none"
+              />
+            </div>
+            <div className="flex gap-3 pt-4">
+              <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 rounded-xl border border-surface-200 text-surface-600 hover:bg-surface-50 font-medium">
+                Cancel
+              </button>
+              <button type="submit" disabled={createProject.isPending} className="flex-1 btn-primary py-2.5 disabled:opacity-50">
+                {createProject.isPending ? 'Creating...' : 'Create Project'}
               </button>
             </div>
-            <form onSubmit={handleCreate} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1.5">Project Name</label>
-                <input
-                  id="project-name"
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-surface-800/50 border border-surface-700 text-white placeholder-surface-500 focus:border-primary-500 transition-all"
-                  placeholder="e.g. Website Redesign"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-surface-300 mb-1.5">Description</label>
-                <textarea
-                  id="project-description"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-surface-800/50 border border-surface-700 text-white placeholder-surface-500 focus:border-primary-500 transition-all resize-none h-24"
-                  placeholder="Brief project description..."
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-surface-700 text-surface-300 hover:bg-white/5 transition-all font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  id="project-submit"
-                  type="submit"
-                  disabled={createProject.isPending}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-primary-600 to-purple-600 text-white font-semibold hover:from-primary-500 hover:to-purple-500 transition-all shadow-lg shadow-primary-500/25 disabled:opacity-50"
-                >
-                  {createProject.isPending ? 'Creating...' : 'Create Project'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+          </form>
+        </Modal>
       )}
     </div>
   );

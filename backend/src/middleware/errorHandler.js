@@ -1,42 +1,19 @@
 function errorHandler(err, req, res, next) {
-  console.error('Error:', err);
+  console.error('Error Path:', req.path);
+  console.error('Message:', err.message);
+  console.error('Stack:', err.stack);
 
-  // Prisma known errors
-  if (err.code === 'P2002') {
-    return res.status(409).json({
-      error: 'A record with this data already exists.',
-      details: err.meta?.target
-    });
-  }
+  const status = err.status || 500;
+  
+  // Ensure we always return a "message" property for frontend toasts
+  const message = err.error || err.message || 'Something went wrong on the server';
 
-  if (err.code === 'P2025') {
-    return res.status(404).json({
-      error: 'Record not found.',
-      details: err.meta?.cause
-    });
-  }
-
-  // Zod validation errors
-  if (err.name === 'ZodError') {
-    return res.status(400).json({
-      error: 'Validation failed.',
-      details: err.errors.map(e => ({
-        field: e.path.join('.'),
-        message: e.message
-      }))
-    });
-  }
-
-  // JWT errors
-  if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-    return res.status(401).json({ error: 'Invalid or expired token.' });
-  }
-
-  // Default
-  const statusCode = err.statusCode || 500;
-  res.status(statusCode).json({
-    error: err.message || 'Internal server error.',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  res.status(status).json({
+    status: 'error',
+    message: message,
+    error: message, // Support legacy error key if needed
+    details: err.details || null,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 }
 

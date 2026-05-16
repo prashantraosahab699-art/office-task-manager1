@@ -1,4 +1,5 @@
 const prisma = require('../utils/prisma');
+const bcrypt = require('bcryptjs');
 
 async function listProjects(req, res, next) {
   try {
@@ -141,15 +142,26 @@ async function addMember(req, res, next) {
   try {
     const { email, role } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    let user = await prisma.user.findUnique({ where: { email } });
+    
+    // AUTO-INVITE: Create user if not found
     if (!user) {
-      return res.status(404).json({ error: 'User with this email not found.' });
+      const tempPassword = await bcrypt.hash('Member1234', 12);
+      user = await prisma.user.create({
+        data: {
+          email,
+          name: email.split('@')[0], // Use first part of email as name
+          password: tempPassword,
+          role: 'MEMBER'
+        }
+      });
     }
 
     // Check if already a member
     const existingMember = await prisma.projectMember.findUnique({
       where: { projectId_userId: { projectId: req.params.id, userId: user.id } }
     });
+    
     if (existingMember) {
       return res.status(409).json({ error: 'User is already a member of this project.' });
     }
