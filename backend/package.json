@@ -26,6 +26,6 @@
     "prisma": "^6.9.0"
   },
   "engines": {
-    "node": "20.x"
+    "node": "22.x"
   }
 }
