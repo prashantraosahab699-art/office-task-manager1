@@ -32,7 +32,7 @@ app.get('/api/health', (req, res) => {
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {
-  const frontendPath = path.resolve(__dirname, '../../frontend/dist');
+  const frontendPath = path.join(process.cwd(), 'frontend', 'dist');
 
   app.use(express.static(frontendPath));
 
