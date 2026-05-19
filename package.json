@@ -7,7 +7,9 @@
     "dev:backend": "cd backend && npm run dev",
     "dev:frontend": "cd frontend && npm run dev",
     "db:setup": "cd backend && npx prisma migrate dev --name init && npx prisma generate && npm run seed",
-    "start": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
+    "build": "cd frontend && npm install --legacy-peer-deps && npm run build && cd ../backend && npm install && npx prisma generate",
+    "start": "cd backend && npx prisma migrate deploy && node src/index.js",
+    "dev": "npx concurrently \"npm run dev:backend\" \"npm run dev:frontend\""
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
